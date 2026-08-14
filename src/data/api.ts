@@ -22,6 +22,17 @@ interface RpcSourceSummary {
   latest_captured_at: string | null
 }
 
+export function orderTopicsByHeat(topics: HotTopic[]): HotTopic[] {
+  return [...topics].sort((a, b) => {
+    if (a.hotScore === null && b.hotScore !== null) return 1
+    if (a.hotScore !== null && b.hotScore === null) return -1
+    if (a.hotScore !== null && b.hotScore !== null && a.hotScore !== b.hotScore) {
+      return b.hotScore - a.hotScore
+    }
+    return a.rank - b.rank || SOURCES.indexOf(a.source) - SOURCES.indexOf(b.source) || a.id - b.id
+  })
+}
+
 async function callRpc<T>(name: string, body: Record<string, string | number | null>): Promise<T> {
   if (!supabaseUrl || !publishableKey) {
     throw new Error('Supabase 尚未配置')
@@ -45,7 +56,7 @@ async function callRpc<T>(name: string, body: Record<string, string | number | n
 
 export async function fetchHotTopics(date: string, source: SourceKey | 'all'): Promise<HotTopicPage> {
   if (!supabaseUrl || !publishableKey) {
-    const topics = source === 'all' ? demoTopics : demoTopics.filter((topic) => topic.source === source)
+    const topics = orderTopicsByHeat(source === 'all' ? demoTopics : demoTopics.filter((topic) => topic.source === source))
     return {
       topics,
       summary: SOURCES.map((item) => ({
@@ -77,7 +88,7 @@ export async function fetchHotTopics(date: string, source: SourceKey | 'all'): P
   ])
   const rows = rowGroups.flat()
 
-  const topics: HotTopic[] = rows.map((row) => ({
+  const topics = orderTopicsByHeat(rows.map((row): HotTopic => ({
     id: row.id,
     source: row.source,
     title: row.title,
@@ -87,7 +98,7 @@ export async function fetchHotTopics(date: string, source: SourceKey | 'all'): P
     rank: row.rank,
     hotScore: row.hot_score,
     capturedAt: row.captured_at,
-  }))
+  })))
   const summary: SourceSummary[] = sourceRows.map((row) => ({
     source: row.source,
     itemCount: row.item_count,

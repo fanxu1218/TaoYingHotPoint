@@ -135,10 +135,9 @@ export default function App() {
 
   const ordered = useMemo(() => {
     const keyword = query.trim().toLocaleLowerCase('zh-CN')
-    const visible = keyword
+    return keyword
       ? topics.filter((topic) => `${topic.title} ${topic.summary ?? ''}`.toLocaleLowerCase('zh-CN').includes(keyword))
       : topics
-    return [...visible].sort((a, b) => a.rank - b.rank || SOURCES.indexOf(a.source) - SOURCES.indexOf(b.source))
   }, [query, topics])
 
   const displayDate = formatDate(date)
