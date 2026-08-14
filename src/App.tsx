@@ -97,7 +97,7 @@ function BentoCard({ topic, index }: { topic: HotTopic; index: number }) {
       <div className="card-footer">
         <span className="heat-value"><Flame size={14} fill="currentColor" />{compactNumber(topic.hotScore)}</span>
         <div className="card-actions">
-          <a href={primaryUrl} target="_blank" rel="noreferrer">原平台 <ArrowUpRight size={13} /></a>
+          {primaryUrl && <a href={primaryUrl} target="_blank" rel="noreferrer">原平台 <ArrowUpRight size={13} /></a>}
           <a className="fallback-link" href={searchUrl} target="_blank" rel="noreferrer">备用搜索 <Search size={12} /></a>
         </div>
       </div>

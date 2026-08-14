@@ -9,15 +9,19 @@ const SOURCE_DOMAINS: Record<SourceKey, string> = {
 }
 
 export function fallbackSearchUrl(topic: HotTopic): string {
-  const keyword = `${topic.title} site:${SOURCE_DOMAINS[topic.source]}`
-  return `https://www.baidu.com/s?wd=${encodeURIComponent(keyword)}`
+  return `https://www.baidu.com/s?wd=${encodeURIComponent(topic.title)}`
 }
 
-export function primaryTopicUrl(topic: HotTopic): string {
+export function primaryTopicUrl(topic: HotTopic): string | null {
   try {
     const url = new URL(topic.url)
     if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-      return fallbackSearchUrl(topic)
+      return null
+    }
+
+    const sourceDomain = SOURCE_DOMAINS[topic.source]
+    if (url.hostname !== sourceDomain && !url.hostname.endsWith(`.${sourceDomain}`)) {
+      return null
     }
 
     if (topic.source === 'toutiao' && (url.hostname === 'toutiao.com' || url.hostname.endsWith('.toutiao.com'))) {
@@ -32,6 +36,6 @@ export function primaryTopicUrl(topic: HotTopic): string {
 
     return url.toString()
   } catch {
-    return fallbackSearchUrl(topic)
+    return null
   }
 }
