@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ArrowUpRight, CalendarDays, Flame, RefreshCw, Search, TrendingUp } from 'lucide-react'
 import { fetchHotTopics } from './data/api'
+import { fallbackSearchUrl, primaryTopicUrl } from './topicLinks'
 import { SOURCES, type HotTopic, type SourceKey, type SourceSummary } from './types'
 
 const SOURCE_META: Record<SourceKey, { label: string; short: string; tone: string }> = {
@@ -38,7 +39,7 @@ function SignalTicker({ topics }: { topics: HotTopic[] }) {
   const group = (hidden: boolean) => (
     <div className="ticker-group" aria-hidden={hidden}>
       {tickerTopics.map((topic) => (
-        <a key={`${hidden ? 'copy' : 'main'}-${topic.source}-${topic.id}`} href={topic.url} target="_blank" rel="noreferrer">
+        <a key={`${hidden ? 'copy' : 'main'}-${topic.source}-${topic.id}`} href={`#topic-${topic.source}-${topic.id}`} tabIndex={hidden ? -1 : 0}>
           <span className={`ticker-source ${SOURCE_META[topic.source].tone}`}>{SOURCE_META[topic.source].short}</span>
           <strong>{topic.title}</strong>
           <i>#{topic.rank}</i>
@@ -78,12 +79,12 @@ function BentoCard({ topic, index }: { topic: HotTopic; index: number }) {
   const meta = SOURCE_META[topic.source]
   const lead = index === 0
   const featured = index < 5
+  const primaryUrl = primaryTopicUrl(topic)
+  const searchUrl = fallbackSearchUrl(topic)
   return (
-    <a
+    <article
+      id={`topic-${topic.source}-${topic.id}`}
       className={`bento-card ${lead ? 'lead-card' : featured ? 'featured-card' : ''} pattern-${index % 4}`}
-      href={topic.url}
-      target="_blank"
-      rel="noreferrer"
     >
       <div className="card-glow" aria-hidden="true" />
       <div className="card-meta">
@@ -94,10 +95,13 @@ function BentoCard({ topic, index }: { topic: HotTopic; index: number }) {
       <h2>{topic.title}</h2>
       <p>{topic.summary ?? '点击查看原平台的完整内容与最新讨论。'}</p>
       <div className="card-footer">
-        <span><Flame size={14} fill="currentColor" />{compactNumber(topic.hotScore)}</span>
-        <span>查看原文 <ArrowUpRight size={15} /></span>
+        <span className="heat-value"><Flame size={14} fill="currentColor" />{compactNumber(topic.hotScore)}</span>
+        <div className="card-actions">
+          <a href={primaryUrl} target="_blank" rel="noreferrer">原平台 <ArrowUpRight size={13} /></a>
+          <a className="fallback-link" href={searchUrl} target="_blank" rel="noreferrer">备用搜索 <Search size={12} /></a>
+        </div>
       </div>
-    </a>
+    </article>
   )
 }
 
