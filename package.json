@@ -1,0 +1,25 @@
+{
+  "name": "taoying-hot-point",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@11.19.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "test:collector": "python3 -m unittest discover -s tests -p 'test_*.py'"
+  },
+  "dependencies": {
+    "react": "latest",
+    "react-dom": "latest",
+    "lucide-react": "latest"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "typescript": "latest",
+    "vite": "latest"
+  }
+}

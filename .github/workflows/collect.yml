@@ -1,0 +1,52 @@
+name: 每日采集热点
+
+on:
+  schedule:
+    # GitHub Actions 的 cron 使用 UTC；01:15 对应北京时间 09:15。
+    - cron: '15 1 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daily-hot-collector
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: 获取代码
+        uses: actions/checkout@v4
+
+      - name: 配置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: 安装采集依赖
+        run: pip install -r requirements.txt
+
+      - name: 采集并写入数据库
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          set -o pipefail
+          python -m collector.main --limit 100 | tee collection-status.json
+
+      - name: 写入任务摘要
+        if: always()
+        run: |
+          {
+            echo '## 每日热点采集结果'
+            echo '```json'
+            if [ -f collection-status.json ]; then
+              cat collection-status.json
+            else
+              echo '{"status":"collector did not produce a report"}'
+            fi
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
