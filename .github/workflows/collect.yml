@@ -40,6 +40,50 @@ jobs:
       - name: 写入任务摘要
         if: always()
         run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          report_path = Path('collection-status.json')
+          if not report_path.exists():
+              print('::warning title=数据库容量监控::采集器未生成状态文件，无法读取数据库容量')
+              raise SystemExit(0)
+
+          try:
+              report = json.loads(report_path.read_text(encoding='utf-8'))
+          except (OSError, json.JSONDecodeError) as error:
+              print(f'::warning title=数据库容量监控::状态文件读取失败：{error}')
+              raise SystemExit(0)
+
+          usage = report.get('database') or {}
+          status = usage.get('status')
+          summary_path = Path(os.environ['GITHUB_STEP_SUMMARY'])
+          with summary_path.open('a', encoding='utf-8') as summary:
+              summary.write('## 数据库容量\n')
+              if status in {'ok', 'warning', 'critical'}:
+                  summary.write(
+                      f"- 已使用：**{usage['size_mb']} MB / {usage['limit_mb']} MB** "
+                      f"（{usage['usage_percent']}%）\n"
+                  )
+                  summary.write(f"- 预警阈值：**{usage['warning_mb']} MB**\n\n")
+              else:
+                  summary.write(f"- 容量读取失败：{usage.get('error', '无可用数据')}\n\n")
+
+          if status == 'warning':
+              print(
+                  f"::warning title=数据库容量预警::数据库已使用 "
+                  f"{usage['size_mb']} MB / {usage['limit_mb']} MB（{usage['usage_percent']}%）"
+              )
+          elif status == 'critical':
+              print(
+                  f"::warning title=数据库容量已达上限::数据库已使用 "
+                  f"{usage['size_mb']} MB / {usage['limit_mb']} MB，请立即清理或升级套餐"
+              )
+          elif status == 'unavailable':
+              print(f"::warning title=数据库容量监控::容量读取失败：{usage.get('error', '未知错误')}")
+          PY
+
           {
             echo '## 每日热点采集结果'
             echo '```json'

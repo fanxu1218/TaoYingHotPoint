@@ -4,7 +4,7 @@ import logging
 import os
 import sys
 from datetime import datetime, timezone
-from typing import Dict, List
+from typing import Dict, List, Optional
 from zoneinfo import ZoneInfo
 
 from collector.http import HttpClient
@@ -59,10 +59,23 @@ def main() -> int:
             LOGGER.exception("%s：采集失败", provider.source)
 
     finished_at = datetime.now(timezone.utc)
+    database_usage: Optional[Dict[str, object]] = None
     if storage:
         storage.record_run(started_at, finished_at, statuses)
+        try:
+            database_usage = storage.get_database_usage()
+            LOGGER.info(
+                "数据库容量：%.2f MB / %d MB（%.2f%%）",
+                database_usage["size_mb"],
+                database_usage["limit_mb"],
+                database_usage["usage_percent"],
+            )
+        except Exception as error:
+            database_usage = {"status": "unavailable", "error": str(error)[:500]}
+            LOGGER.exception("数据库容量查询失败")
 
-    print(json.dumps(statuses, ensure_ascii=False, indent=2))
+    report = {"sources": statuses, "database": database_usage}
+    print(json.dumps(report, ensure_ascii=False, indent=2))
     succeeded = sum(1 for status in statuses.values() if status["status"] == "success")
     if succeeded == 0 or (args.strict and succeeded != len(statuses)):
         return 1

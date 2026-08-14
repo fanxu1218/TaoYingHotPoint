@@ -7,6 +7,31 @@ import psycopg
 from collector.models import HotItem
 
 
+FREE_DATABASE_LIMIT_BYTES = 500 * 1024 * 1024
+DATABASE_WARNING_BYTES = 400 * 1024 * 1024
+
+
+def build_database_usage(size_bytes: int) -> Dict[str, object]:
+    if size_bytes < 0:
+        raise ValueError("数据库容量不能为负数")
+
+    if size_bytes >= FREE_DATABASE_LIMIT_BYTES:
+        status = "critical"
+    elif size_bytes >= DATABASE_WARNING_BYTES:
+        status = "warning"
+    else:
+        status = "ok"
+
+    return {
+        "status": status,
+        "size_bytes": size_bytes,
+        "size_mb": round(size_bytes / 1024 / 1024, 2),
+        "warning_mb": DATABASE_WARNING_BYTES // 1024 // 1024,
+        "limit_mb": FREE_DATABASE_LIMIT_BYTES // 1024 // 1024,
+        "usage_percent": round(size_bytes / FREE_DATABASE_LIMIT_BYTES * 100, 2),
+    }
+
+
 class PostgresStorage:
     def __init__(self, database_url: str) -> None:
         self.database_url = database_url
@@ -71,3 +96,12 @@ class PostgresStorage:
                     """,
                     (started_at, finished_at, state, total, json.dumps(statuses, ensure_ascii=False), error),
                 )
+
+    def get_database_usage(self) -> Dict[str, object]:
+        with psycopg.connect(self.database_url, prepare_threshold=None) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("select pg_database_size(current_database())")
+                row = cursor.fetchone()
+                if row is None:
+                    raise RuntimeError("数据库容量查询未返回结果")
+                return build_database_usage(int(row[0]))
