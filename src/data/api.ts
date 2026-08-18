@@ -1,4 +1,5 @@
 import { demoTopics } from './demo'
+import { prepareTopics } from './topicList'
 import { SOURCES, type HotTopic, type HotTopicPage, type SourceKey, type SourceSummary } from '../types'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined
@@ -20,17 +21,6 @@ interface RpcSourceSummary {
   source: SourceKey
   item_count: number
   latest_captured_at: string | null
-}
-
-export function orderTopicsByHeat(topics: HotTopic[]): HotTopic[] {
-  return [...topics].sort((a, b) => {
-    if (a.hotScore === null && b.hotScore !== null) return 1
-    if (a.hotScore !== null && b.hotScore === null) return -1
-    if (a.hotScore !== null && b.hotScore !== null && a.hotScore !== b.hotScore) {
-      return b.hotScore - a.hotScore
-    }
-    return a.rank - b.rank || SOURCES.indexOf(a.source) - SOURCES.indexOf(b.source) || a.id - b.id
-  })
 }
 
 async function callRpc<T>(name: string, body: Record<string, string | number | null>): Promise<T> {
@@ -56,7 +46,7 @@ async function callRpc<T>(name: string, body: Record<string, string | number | n
 
 export async function fetchHotTopics(date: string, source: SourceKey | 'all'): Promise<HotTopicPage> {
   if (!supabaseUrl || !publishableKey) {
-    const topics = orderTopicsByHeat(source === 'all' ? demoTopics : demoTopics.filter((topic) => topic.source === source))
+    const topics = prepareTopics(source === 'all' ? demoTopics : demoTopics.filter((topic) => topic.source === source))
     return {
       topics,
       summary: SOURCES.map((item) => ({
@@ -88,7 +78,7 @@ export async function fetchHotTopics(date: string, source: SourceKey | 'all'): P
   ])
   const rows = rowGroups.flat()
 
-  const topics = orderTopicsByHeat(rows.map((row): HotTopic => ({
+  const topics = prepareTopics(rows.map((row): HotTopic => ({
     id: row.id,
     source: row.source,
     title: row.title,
