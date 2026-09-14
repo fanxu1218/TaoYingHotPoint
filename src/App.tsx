@@ -145,9 +145,9 @@ export default function App() {
   return (
     <div className="site-shell">
       <header className="topbar">
-        <a className="brand" href="./" aria-label="桃影热点首页">
+        <a className="brand" href="./" aria-label="饕影热点首页">
           <span className="brand-mark"><Flame size={18} fill="currentColor" /></span>
-          <span>桃影热点</span>
+          <span>饕影热点</span>
         </a>
         <span className="topbar-edition">DAILY SIGNAL / 网络热点编辑台</span>
         <a className="github-link" href="https://github.com/fanxu1218/TaoYingHotPoint" target="_blank" rel="noreferrer">开源项目 <ArrowUpRight size={15} /></a>
@@ -200,7 +200,7 @@ export default function App() {
       </main>
 
       <footer>
-        <span>桃影热点 · 数据来自各平台公开榜单</span>
+        <span>饕影热点 · 数据来自各平台公开榜单</span>
         <span>每天一张数字头版，记录网络正在关心什么</span>
         <span>内容版权归原平台及作者所有</span>
       </footer>

@@ -1,10 +1,10 @@
-# 桃影热点
+# 饕影热点
 
 每天自动采集百度、微博、今日头条、小红书和腾讯公开热点榜，保存到 PostgreSQL，并通过 GitHub Pages 提供只读查询。
 
 ## 网站入口
 
-👉 [打开桃影热点网站](https://fanxu1218.github.io/TaoYingHotPoint/)
+👉 [打开饕影热点网站](https://fanxu1218.github.io/TaoYingHotPoint/)
 
 [查看更新日志](./CHANGELOG.md)
 
