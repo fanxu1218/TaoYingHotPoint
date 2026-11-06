@@ -30,7 +30,12 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="采集公开平台热点榜")
     parser.add_argument("--limit", type=int, default=100, help="每个平台最多采集条数")
     parser.add_argument("--dry-run", action="store_true", help="只采集和打印状态，不写数据库")
-    parser.add_argument("--strict", action="store_true", help="任一平台失败时返回失败状态")
+    parser.add_argument("--strict", action="store_true", help="任一必需平台失败时返回失败状态")
+    parser.add_argument(
+        "--optional-source", action="append", default=[],
+        choices=["baidu", "weibo", "toutiao", "xiaohongshu", "tencent"],
+        help="允许暂时不可用的平台；仍尝试采集并记录失败，可重复指定",
+    )
     args = parser.parse_args()
 
     logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"), format="%(asctime)s %(levelname)s %(message)s")
@@ -41,10 +46,11 @@ def main() -> int:
 
     started_at = datetime.now(timezone.utc)
     client = HttpClient()
-    storage = PostgresStorage(database_url) if database_url else None
+    storage = PostgresStorage(database_url) if database_url and not args.dry_run else None
     statuses: Dict[str, Dict[str, object]] = {}
 
     for provider in build_providers(client, max(1, min(args.limit, 100))):
+        required = provider.source not in args.optional_source
         try:
             items = provider.fetch()
             if not items:
@@ -52,10 +58,12 @@ def main() -> int:
             saved = len(items)
             if storage:
                 saved = storage.save_items(items, datetime.now(ZoneInfo("Asia/Shanghai")).date())
-            statuses[provider.source] = {"status": "success", "count": saved}
+            statuses[provider.source] = {"status": "success", "count": saved, "required": required}
             LOGGER.info("%s：采集 %d 条", provider.source, saved)
         except Exception as error:
-            statuses[provider.source] = {"status": "failed", "count": 0, "error": str(error)[:500]}
+            statuses[provider.source] = {
+                "status": "failed", "count": 0, "required": required, "error": str(error)[:500],
+            }
             LOGGER.exception("%s：采集失败", provider.source)
 
     finished_at = datetime.now(timezone.utc)
@@ -74,10 +82,12 @@ def main() -> int:
             database_usage = {"status": "unavailable", "error": str(error)[:500]}
             LOGGER.exception("数据库容量查询失败")
 
-    report = {"sources": statuses, "database": database_usage}
-    print(json.dumps(report, ensure_ascii=False, indent=2))
     succeeded = sum(1 for status in statuses.values() if status["status"] == "success")
-    if succeeded == 0 or (args.strict and succeeded != len(statuses)):
+    state = "success" if succeeded == len(statuses) else "partial" if succeeded else "failed"
+    report = {"status": state, "sources": statuses, "database": database_usage}
+    print(json.dumps(report, ensure_ascii=False, indent=2))
+    required_failed = any(status["status"] == "failed" and status["required"] for status in statuses.values())
+    if succeeded == 0 or (args.strict and required_failed):
         return 1
     return 0
 

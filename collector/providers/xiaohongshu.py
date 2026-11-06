@@ -8,7 +8,6 @@ from collector.providers.base import Provider
 class XiaohongshuProvider(Provider):
     source = "xiaohongshu"
     urls = (
-        "https://edith.xiaohongshu.com/api/sns/web/v1/search/hot_list",
         "https://edith.xiaohongshu.com/api/sns/v1/search/hot_list",
     )
 
@@ -45,4 +44,4 @@ class XiaohongshuProvider(Provider):
                 errors.append(f"{url}: 榜单为空")
             except Exception as error:  # 单个公开入口失效时尝试下一个官方入口
                 errors.append(f"{url}: {error}")
-        raise RuntimeError("；".join(errors))
+        raise RuntimeError("小红书公开热榜暂不可用；" + "；".join(errors))

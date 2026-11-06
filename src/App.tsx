@@ -190,6 +190,10 @@ export default function App() {
         </section>
 
         <SourceLegend summary={summary} />
+        {!demo && !loading && !error && topics.length > 0 && date === localDate() &&
+          !summary.some((item) => item.source === 'xiaohongshu' && item.itemCount > 0) && (
+          <p className="source-status-note" role="status">小红书公开热榜暂不可用，当前展示其他平台的数据。</p>
+        )}
 
         <section className="signal-board" aria-live="polite" aria-busy={loading}>
           {loading && <div className="state-card">正在编排今天的数字头版…</div>}

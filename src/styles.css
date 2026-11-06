@@ -76,6 +76,7 @@ main { max-width: 1540px; margin: 0 auto; padding: 0 clamp(20px, 4.6vw, 72px) 90
 .source-legend span { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; color: var(--muted); font-size: 10px; }
 .source-legend i { width: 7px; height: 7px; border-radius: 50%; }
 .source-legend b { min-width: 22px; color: var(--ink); font-size: 11px; }
+.source-status-note { margin: 12px 0; padding: 10px 14px; color: #765409; background: #fff7d8; border-left: 3px solid #e8c567; font-size: 12px; line-height: 1.6; }
 
 .signal-board { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); grid-auto-flow: dense; gap: 12px; padding-top: 18px; }
 .bento-card { min-height: 230px; grid-column: span 3; padding: 20px; display: flex; flex-direction: column; color: var(--ink); background: white; border: 1px solid var(--line); overflow: hidden; position: relative; scroll-margin-top: 18px; transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }

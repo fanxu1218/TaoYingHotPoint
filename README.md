@@ -11,7 +11,8 @@
 ## 第一版能力
 
 - 每天北京时间 09:15 自动采集，每个平台最多 100 条。
-- 一个数据源失败不会影响其他数据源写入，执行结果会记录到数据库和 GitHub Actions 摘要。
+- 一个数据源失败不会影响其他数据源写入，执行结果会记录到数据库和 GitHub Actions 摘要。百度、微博、头条、腾讯任一平台失败会使每日任务报错；小红书暂列为可选来源，失败时保留警告，整体状态明确标记为“部分成功”。
+- 主分支连续 30 天没有提交时，独立维护作业会提交一次定时任务维护记录，避免因 60 天无仓库活动而自动停用。
 - 每次采集后自动统计数据库容量；达到 400 MB 时在 GitHub Actions 中产生预警。
 - 同一热点只保存一次正文信息，每天仅新增或更新排名快照。
 - 页面按全平台热度值从高到低统一排列，缺少热度时再参考平台内名次。
@@ -80,6 +81,10 @@ Publishable Key 是给公开客户端使用的低权限标识，不是数据库�
 
 此后任务会每天自动运行。某个平台如果修改公开页面结构，会在采集状态中显示失败，但其他平台仍会继续保存。
 
+小红书原公开热榜接口当前返回 406，尚未恢复采集。每日任务仍尝试该来源，失败时在 Actions 中产生警告，网站今日榜单无小红书数据时也会显示暂不可用提示。若该接口恢复，采集器会正常写入，警告和网站提示随真实数据自动消失。
+
+GitHub 会自动停用连续 60 天没有仓库活动的公开仓库定时任务（[官方说明](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/disable-and-enable-workflows)）。`维护定时采集` 作业单独持有 `contents: write` 权限，只在主分支连续 30 天没有提交时更新 `.github/schedule-heartbeat.json` 并提交；采集作业仍为只读权限。维护记录使用 GitHub Actions 自带令牌提交，不需要新增密钥。
+
 任务摘要同时显示数据库已使用容量、500 MB 免费额度和使用率。达到 400 MB 后，工作流会生成“数据库容量预警”注解，但不会中断正常采集；达到 500 MB 时应清理历史数据或升级 Supabase 套餐。
 
 ## 四、发布 GitHub Pages
@@ -106,6 +111,12 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 python -m collector.main --dry-run --limit 20
+```
+
+验证每日任务相同的必需平台规则（不写数据库）：
+
+```bash
+python -m collector.main --dry-run --strict --optional-source xiaohongshu --limit 20
 ```
 
 解析器测试：
